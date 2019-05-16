@@ -10,13 +10,12 @@ import RPi.GPIO as GPIO
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
-#Pins on RPi, reset pin isn't used, becasue I didn't want to thread
+#Pins on RPi
 clockPin = 13
 latchPin = 16
 dataPinOut = 12
 dataPinIn = 27
 resetPin = 06
-resetArduino = 05
 
 #Setting up GPIOs
 GPIO.setup(clockPin, GPIO.OUT)
@@ -26,24 +25,7 @@ GPIO.setup(resetArduino, GPIO.OUT)
 GPIO.setup(dataPinIn, GPIO.IN)
 GPIO.setup(resetPin, GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
 
-
-
-
-#need one for the siren???
-#Outputs for the shift register
-#offList =[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-#resetList = [1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0]
-#redList = [1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0]
-#yellow1List = [0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0]
-#yellow2List = [0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0]
-#green1List = [0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0]
-#green2List = [0,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0]
-#judgeList = [1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0]
-#launch1List = [0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0]
-#launch2List = [1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0]
-#onList = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-#lastList = [0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1]
-
+#ShiftOut lists. The first 595 is actually the last 8
 offList =[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 resetList = [0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,1]
 redList = [0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0]
@@ -57,15 +39,12 @@ launch2List = [0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0]
 onList = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0]
 lastList = [0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0]
 
+#This resets the Pi and sends a HIGH to the Arduino reset pin. LEDs should be red
 def reset(dataPinOut, dataPinIn, clockPin, latchPin,newOutput):
     
     shiftOut(dataPinOut, clockPin, latchPin,newOutput)
-    GPIO.output(resetArduino,0)
-    time.sleep(.5)
-    GPIO.output(resetArduino,1)
     print("resetting")
     time.sleep(3)
-
 
 #EPD is sent the number of lines and text
 def epd(lines,string1,string2=""):
@@ -100,7 +79,7 @@ def readPins(dataPinOut, dataPinIn, clockPin, latchPin,currentOutput):
     inValue = 0
     for i in range(0,16):
         inValue |= ((GPIO.input(dataPinIn)) << (15-i)) #When I used a list, the bits would be high for no reason
-        GPIO.output(dataPinOut,currentOutput[i]) #Lists work fine for output
+        GPIO.output(dataPinOut,currentOutput[i]) #Lists work fine for output, but I think the order is now messed up.
         time.sleep(.003) #idk if this pause is needed
         GPIO.output(clockPin,1) #toggling the clock to move fwd
         time.sleep(.003)
@@ -130,7 +109,7 @@ def judgePin(pointsPossible, dataPinOut, dataPinIn, clockPin, latchPin,judgeOutp
     GPIO.output(latchPin,0) #toogle latch
     GPIO.output(latchPin,1)
     epd(1,"Judge Pressed")
-    time.sleep(5) #so you know you pushed it
+    time.sleep(5) #so you know you pushed it. Think of this also as a penalty
 
     GPIO.output(clockPin,0)
     i = 0
@@ -159,6 +138,7 @@ def shiftOut(dataPinOut, clockPin, latchPin,newOutput):
     GPIO.output(latchPin,1)
 
 #looking for one pin being high
+#Points, Shift Register Settings, Pin to check, High/Low, 3 Output Arrays, EPD stuff
 def landerOne(pointsPossible, dataPinOut, dataPinIn, clockPin, latchPin,checkStatus,highLow,currentOutput, newOutput,judgeOutput, lines,string1,string2=""):
     
     epd(lines,string1,string2) #Send text to EPD
@@ -213,7 +193,7 @@ def evac(dataPinOut, clockPin, latchPin,newOutput,judgeOutput,lastList, lines,st
 
     epd(lines,string1,string2) #Send text to EPD
 
-    for k in range (0,10):
+for k in range (0,10): #Flash on and off for 10 cycles
         GPIO.output(clockPin,0)
         m = 0
         for m in range(0,16):
@@ -237,7 +217,7 @@ def evac(dataPinOut, clockPin, latchPin,newOutput,judgeOutput,lastList, lines,st
         time.sleep(1)
         k+=1
 
-    q = 0
+    q = 0 #Turn off LEDs and siren
     for q in range(0,16):
         GPIO.output(dataPinOut,lastList[q])
         GPIO.output(clockPin,1)
@@ -258,6 +238,7 @@ def password(pointsPossible,dataPinOut, dataPinIn, clockPin,latchPin,currentOutp
     resetPressed = 0
     judgePressed = 0
     
+    #This lets it put the letters in order and also allows for use of judge and reset button
     while 1:
         while 1:
             binary = readPins(dataPinOut, dataPinIn, clockPin, latchPin,currentOutput)
@@ -356,7 +337,7 @@ def password(pointsPossible,dataPinOut, dataPinIn, clockPin,latchPin,currentOutp
 try:
     #landerOne(pointsPossible, dataPinOut, dataPinIn, clockPin, latchPin,checkStatus,currentOutput, newOutput,judgeOutput, lines,string1,string2=""):
     while 1:
-        switchDict = {"reset":11,"card":0,"telemetry":3,"signal":2,"oxygen":4,"methane":5,"turbo":6,"lock":7,"ignition":8,"alarm":9,"launch":10,"judge":1}
+        switchDict = {"card":0,"judge":1,"signal":2,"telemetry":3,"oxygen":4,"methane":5,"turbo":6,"lock":7,"ignition":8,"alarm":9,"launch":10}
         pointsDict = {"insertCardPoints":10,"enableTelemetryPoints":20,"signalLockPoints":30,"enterPasswordPoints":17,"prepareEnginePoints":22,"prepareCapsulePoints":24,"closeLatchPoints":5,"launchPoints":11}
         while 1:
             print("starting")
