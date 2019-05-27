@@ -20,9 +20,9 @@ int tiltPos = 0;
 
 //Initialize
 int jogSpeed = 5; //what the incremental movement is
-int azimuthInitial = 10;
+int azimuthInitial = 100;
 int elevationInitial = 10;
-int panInitial = 10;
+int panInitial = 100;
 int tiltInitial = 10;
 
 //Limits and desired
@@ -30,9 +30,9 @@ int gaugeMin = 0;
 int gaugeMax = 190;
 int servoMax = 160;
 int servoMin = 10;
-int desiredAzimuthMax = 140;
-int desiredElevationMax = 140;
-int desiredAzimuthMin = 120;
+int desiredAzimuthMax = 20;
+int desiredElevationMax = 130;
+int desiredAzimuthMin = 10;
 int desiredElevationMin = 120;
 
 //Initiating servo class
@@ -73,6 +73,7 @@ void setup() {
 void loop() {
   
   if(digitalRead(restart) == HIGH){
+    digitalWrite(antennaLock, LOW);
     Serial.println("Resetting");
     //Reset servos and gauges
     pan.write(panInitial);
@@ -86,22 +87,23 @@ void loop() {
     tiltPos = tiltInitial;
     azimuthPos = azimuthInitial;
     elevationPos = elevationInitial;
+    digitalWrite(antennaLock, LOW);
    }
 
  //right-pan-azimuth
   if(digitalRead(right) == HIGH && azimuthPos <= servoMax){
-    Serial.println("Right");
     
     //Move elevation gauge
     azimuthPos = azimuthPos + jogSpeed;
-    Serial.println(azimuthPos);
+    Serial.print("Az Gauge Pos: ");
+    Serial.print(azimuthPos);
     analogWrite(azimuthGauge,azimuthPos);
 
     //Move pan servo
     panPos = panPos + jogSpeed;
     pan.write(panPos);
     delay(500);
-    Serial.print("pos right: ");
+    Serial.print("   Servo right: ");
     Serial.println(panPos);
 
     //If both gauges are lined up, then send signal to the Pi
@@ -115,18 +117,18 @@ void loop() {
    
  //left-pan-azimuth
   if(digitalRead(left) == HIGH && azimuthPos >= servoMin){
-    Serial.println("Left");
     
     //Move elevation gauge
     azimuthPos = azimuthPos - jogSpeed;
-    Serial.println(azimuthPos);
+    Serial.print("Az Gauge Pos: ");
+    Serial.print(azimuthPos);
     analogWrite(azimuthGauge,azimuthPos);
 
     //Move pan servo
     panPos = panPos - jogSpeed;
     pan.write(panPos);
     delay(500);
-    Serial.print("pos right: ");
+    Serial.print("   Servo left: ");
     Serial.println(panPos);
 
 
@@ -140,18 +142,18 @@ void loop() {
 
 //up-tilt-elevation
   if(digitalRead(up) == HIGH && elevationPos <= servoMax){
-    Serial.println("up");
     
     //Move elevation gauge
     elevationPos = elevationPos + jogSpeed;
-    Serial.println(elevationPos);
+    Serial.print("Ev Gauge Pos: ");
+    Serial.print(elevationPos);
     analogWrite(elevationGauge,elevationPos);
 
     //Move pan servo
     tiltPos = tiltPos + jogSpeed;
     tilt.write(tiltPos);
     delay(500);
-    Serial.print("pos up: ");
+    Serial.print("  Servo Up: ");
     Serial.println(tiltPos);
 
     
@@ -165,18 +167,18 @@ void loop() {
 
 //down-tilt-elevation
   if(digitalRead(down) == HIGH && elevationPos >= servoMin){
-    Serial.println("Down");
     
     //Move elevation gauge
     elevationPos = elevationPos - jogSpeed;
-    Serial.println(elevationPos);
+    Serial.print("Ev Gague Pos: ");
+    Serial.print(elevationPos);
     analogWrite(elevationGauge,elevationPos);
 
     //Move pan servo
     tiltPos = tiltPos - jogSpeed;
     tilt.write(tiltPos);
     delay(500);
-    Serial.print("pos up: ");
+    Serial.print("   Servo Down: ");
     Serial.println(tiltPos);
 
     //If both gauges are lined up, then send signal to the Pi

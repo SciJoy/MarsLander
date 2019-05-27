@@ -17,11 +17,11 @@ dataPinOut = 12
 dataPinIn = 27
 resetPin = 06
 
+
 #Setting up GPIOs
 GPIO.setup(clockPin, GPIO.OUT)
 GPIO.setup(latchPin, GPIO.OUT)
 GPIO.setup(dataPinOut, GPIO.OUT)
-GPIO.setup(resetArduino, GPIO.OUT)
 GPIO.setup(dataPinIn, GPIO.IN)
 GPIO.setup(resetPin, GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
 
@@ -29,10 +29,10 @@ GPIO.setup(resetPin, GPIO.IN,pull_up_down=GPIO.PUD_DOWN)
 offList =[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 resetList = [0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,1]
 redList = [0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0]
-yellow1List = [0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0]
-yellow2List = [0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0]
-green1List = [0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0]
-green2List = [0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0]
+yellowRedList = [0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0]
+yellowYellowList = [0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0]
+greenYellowList = [0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0]
+greenList = [0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0]
 judgeList = [0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0]
 launch1List = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]
 launch2List = [0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0]
@@ -163,59 +163,34 @@ def landerOne(pointsPossible, dataPinOut, dataPinIn, clockPin, latchPin,checkSta
 
     return points #sends points out 0 or awarded
 
-#same as lander one except has three switches
-def landerThree(pointsPossible, dataPinOut, dataPinIn, clockPin, latchPin,checkStatus1, checkStatus2, checkStatus3,currentOutput, newOutput,judgeOutput, lines,string1,string2=""):
-
-    epd(lines,string1,string2) #Send text to EPD
-    time.sleep(2)
-    while 1:
-        binary = readPins(dataPinOut, dataPinIn, clockPin, latchPin,currentOutput)
-        
-        if binary[checkStatus1] == "1" and binary[checkStatus2] == "1" and binary[checkStatus3] == "1":
-            shiftOut(dataPinOut, clockPin, latchPin,newOutput)
-            points = pointsPossible
-            break
-        
-        elif binary[1] == "1":
-            judgePin(pointsPossible, dataPinOut, dataPinIn, clockPin, latchPin,judgeOutput)
-            points = 0
-            break
-
-        elif GPIO.input(resetPin) == 1:
-            print("RESET")
-            points =0
-            break
-
-    return points
-
 #Needed a new function for this since it flashes LEDs
 def evac(dataPinOut, clockPin, latchPin,newOutput,judgeOutput,lastList, lines,string1,string2=""):
 
     epd(lines,string1,string2) #Send text to EPD
 
-for k in range (0,10): #Flash on and off for 10 cycles
-        GPIO.output(clockPin,0)
-        m = 0
-        for m in range(0,16):
-            GPIO.output(dataPinOut,newOutput[m])
-            GPIO.output(clockPin,1)
+    for k in range (0,10): #Flash on and off for 10 cycles
             GPIO.output(clockPin,0)
-            m += 1
-        GPIO.output(latchPin,0)
-        GPIO.output(latchPin,1)
-        
-        time.sleep(1)
-        GPIO.output(clockPin,0)
-        n = 0
-        for n in range(0,16):
-            GPIO.output(dataPinOut,judgeOutput[n])
-            GPIO.output(clockPin,1)
+            m = 0
+            for m in range(0,16):
+                GPIO.output(dataPinOut,newOutput[m])
+                GPIO.output(clockPin,1)
+                GPIO.output(clockPin,0)
+                m += 1
+            GPIO.output(latchPin,0)
+            GPIO.output(latchPin,1)
+            
+            time.sleep(1)
             GPIO.output(clockPin,0)
-            n += 1
-        GPIO.output(latchPin,0)
-        GPIO.output(latchPin,1)
-        time.sleep(1)
-        k+=1
+            n = 0
+            for n in range(0,16):
+                GPIO.output(dataPinOut,judgeOutput[n])
+                GPIO.output(clockPin,1)
+                GPIO.output(clockPin,0)
+                n += 1
+            GPIO.output(latchPin,0)
+            GPIO.output(latchPin,1)
+            time.sleep(1)
+            k+=1
 
     q = 0 #Turn off LEDs and siren
     for q in range(0,16):
@@ -338,7 +313,7 @@ try:
     #landerOne(pointsPossible, dataPinOut, dataPinIn, clockPin, latchPin,checkStatus,currentOutput, newOutput,judgeOutput, lines,string1,string2=""):
     while 1:
         switchDict = {"card":0,"judge":1,"signal":2,"telemetry":3,"oxygen":4,"methane":5,"turbo":6,"lock":7,"ignition":8,"alarm":9,"launch":10}
-        pointsDict = {"insertCardPoints":10,"enableTelemetryPoints":20,"signalLockPoints":30,"enterPasswordPoints":17,"prepareEnginePoints":22,"prepareCapsulePoints":24,"closeLatchPoints":5,"launchPoints":11}
+        pointsDict = {"insertCardPoints":10,"enableTelemetryPoints":5,"signalLockPoints":10,"enterPasswordPoints":10,"prepareEnginePoints":5,"prepareCapsulePoints":5,"closeLatchPoints":5,"launchPoints":5}
         while 1:
             print("starting")
             reset(dataPinOut, dataPinIn, clockPin, latchPin,resetList)
@@ -347,39 +322,38 @@ try:
                 print("RESET")
                 break
             
-            enableTelemetry = landerOne(pointsDict["enableTelemetryPoints"],dataPinOut, dataPinIn, clockPin, latchPin,switchDict["telemetry"],"1",yellow1List,yellow2List,judgeList,1,"ENABLE TELEMETRY")
+            enableTelemetry = landerOne(pointsDict["enableTelemetryPoints"],dataPinOut, dataPinIn, clockPin, latchPin,switchDict["telemetry"],"1",yellowRedList,yellowYellowList,judgeList,1,"ENABLE TELEMETRY")
             if GPIO.input(resetPin) == 1:
                 print("RESET")
                 break
 
-            signalLock = landerOne(pointsDict["signalLockPoints"],dataPinOut, dataPinIn, clockPin, latchPin,switchDict["signal"],"1",yellow2List,yellow2List,judgeList,1,"FIND SIGNAL")
+            signalLock = landerOne(pointsDict["signalLockPoints"],dataPinOut, dataPinIn, clockPin, latchPin,switchDict["signal"],"1",yellowYellowList,yellowYellowList,judgeList,2,"AUTO ALIGN FAIL","MANUALLY ALIGN")
+            if GPIO.input(resetPin) == 1:
+                print("RESET")
+                break
+            
+            passwordTotal = password(pointsDict["enterPasswordPoints"],dataPinOut, dataPinIn, clockPin, latchPin,yellowYellowList,judgeList,1,"ENTER PASSWORD")
+            if GPIO.input(resetPin) == 1:
+                print("RESET")
+                break
+            
+            prepareEngine = landerOne(pointsDict["prepareEnginePoints"],dataPinOut, dataPinIn, clockPin,latchPin,switchDict["methane"],"1",yellowYellowList,greenYellowList,judgeList,1,"PREPARE ENGINE")
             if GPIO.input(resetPin) == 1:
                 print("RESET")
                 break
 
-            prepareEngine = landerThree(pointsDict["prepareEnginePoints"],dataPinOut, dataPinIn, clockPin,latchPin,switchDict["oxygen"],switchDict["methane"],switchDict["turbo"],yellow2List,green1List,judgeList,1,"PREPARE ENGINE")
+            prepareCapsule = landerOne(pointsDict["prepareCapsulePoints"],dataPinOut, dataPinIn, clockPin,latchPin,switchDict["lock"],"1",greenYellowList,greenList,judgeList,1,"PREPARE CAPSULE")
             if GPIO.input(resetPin) == 1:
                 print("RESET")
                 break
 
-            prepareCapsule = landerThree(pointsDict["prepareCapsulePoints"],dataPinOut, dataPinIn, clockPin,latchPin,switchDict["lock"],switchDict["ignition"],switchDict["alarm"],green1List,green2List,judgeList,1,"PREPARE CAPSULE")
+            closeLatch = landerOne(pointsDict["closeLatchPoints"],dataPinOut, dataPinIn, clockPin, latchPin,switchDict["judge"],"1",greenList,greenList,judgeList,1,"CLOSE ACCESS DOOR")
+
+            launchButton = landerOne(pointsDict["launchPoints"],dataPinOut, dataPinIn, clockPin, latchPin,switchDict["launch"],"0",greenList,offList,judgeList,1,"PRESS LAUNCH")
             if GPIO.input(resetPin) == 1:
                 print("RESET")
                 break
-
-
-            passwordTotal = password(pointsDict["enterPasswordPoints"],dataPinOut, dataPinIn, clockPin, latchPin,green2List,judgeList,1,"ENTER PASSWORD")
-            if GPIO.input(resetPin) == 1:
-                print("RESET")
-                break
-
-            closeLatch = landerOne(pointsDict["closeLatchPoints"],dataPinOut, dataPinIn, clockPin, latchPin,switchDict["judge"],"1",green2List,green2List,judgeList,1,"CLOSE ACCESS DOOR")
-
-            launchButton = landerOne(pointsDict["launchPoints"],dataPinOut, dataPinIn, clockPin, latchPin,switchDict["launch"],"0",green2List,offList,judgeList,1,"PRESS LAUNCH")
-            if GPIO.input(resetPin) == 1:
-                print("RESET")
-                break
-                    
+            
             countDown = evac(dataPinOut,clockPin,latchPin,launch1List,launch2List,lastList,2,"EVACUATE THE","BLAST AREA!")
 
             pointsTotal = insertCard + enableTelemetry + signalLock + prepareEngine + prepareCapsule + closeLatch + passwordTotal + launchButton
